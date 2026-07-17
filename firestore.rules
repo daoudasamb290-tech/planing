@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Catch-All Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Task Schema Validation Helpers
+    function isValidTask(task) {
+      return task.userId == request.auth.uid
+        && task.title is string && task.title.size() > 0 && task.title.size() <= 100
+        && (!('description' in task) || (task.description is string && task.description.size() <= 2000))
+        && task.date is string && task.date.size() <= 20
+        && (!('time' in task) || (task.time is string && task.time.size() <= 10))
+        && task.priority in ['low', 'medium', 'high', 'urgent']
+        && task.status in ['todo', 'in_progress', 'completed']
+        && (!('projectId' in task) || (task.projectId is string && task.projectId.size() <= 128))
+        && task.createdAt is timestamp
+        && task.updatedAt is timestamp;
+    }
+
+    // Project Schema Validation Helpers
+    function isValidProject(project) {
+      return project.userId == request.auth.uid
+        && project.title is string && project.title.size() > 0 && project.title.size() <= 100
+        && (!('description' in project) || (project.description is string && project.description.size() <= 2000))
+        && project.priority in ['low', 'medium', 'high', 'urgent']
+        && project.status in ['planning', 'active', 'on_hold', 'completed']
+        && (!('startDate' in project) || (project.startDate is string && project.startDate.size() <= 20))
+        && (!('targetDate' in project) || (project.targetDate is string && project.targetDate.size() <= 20))
+        && (!('milestones' in project) || (project.milestones is list && project.milestones.size() <= 50))
+        && project.createdAt is timestamp
+        && project.updatedAt is timestamp;
+    }
+
+    // Reminder Schema Validation Helpers
+    function isValidReminder(reminder) {
+      return reminder.userId == request.auth.uid
+        && reminder.title is string && reminder.title.size() > 0 && reminder.title.size() <= 100
+        && reminder.datetime is string && reminder.datetime.size() <= 30
+        && reminder.type in ['task', 'project', 'custom']
+        && (!('targetId' in reminder) || (reminder.targetId is string && reminder.targetId.size() <= 128))
+        && reminder.channel in ['whatsapp', 'email', 'in_app']
+        && reminder.sent is bool
+        && reminder.createdAt is timestamp
+        && reminder.updatedAt is timestamp;
+    }
+
+    // 2. Tasks Rules
+    match /tasks/{taskId} {
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() 
+        && isValidId(taskId) 
+        && isValidTask(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isSignedIn()
+        && isOwner(resource.data.userId)
+        && isValidTask(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    // 3. Projects Rules
+    match /projects/{projectId} {
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() 
+        && isValidId(projectId) 
+        && isValidProject(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isSignedIn()
+        && isOwner(resource.data.userId)
+        && isValidProject(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    // 4. Reminders Rules
+    match /reminders/{reminderId} {
+      allow get: if isSignedIn() && isOwner(resource.data.userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() 
+        && isValidId(reminderId) 
+        && isValidReminder(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isSignedIn()
+        && isOwner(resource.data.userId)
+        && isValidReminder(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isOwner(resource.data.userId);
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Tableau de Bord de Planification",
+  "description": "Un tableau de bord intuitif et sécurisé pour planifier les tâches quotidiennes, prioriser les projets à long terme, et gérer les échéances importantes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

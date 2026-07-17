@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "Task": {
+      "title": "Task",
+      "description": "Daily tasks for planning",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+        "status": { "type": "string", "enum": ["todo", "in_progress", "completed"] },
+        "projectId": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "date", "priority", "status", "createdAt", "updatedAt"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Long-term projects",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+        "status": { "type": "string", "enum": ["planning", "active", "on_hold", "completed"] },
+        "startDate": { "type": "string" },
+        "targetDate": { "type": "string" },
+        "milestones": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "priority", "status", "createdAt", "updatedAt"]
+    },
+    "Reminder": {
+      "title": "Reminder",
+      "description": "Important reminders/deadlines",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "datetime": { "type": "string" },
+        "type": { "type": "string", "enum": ["task", "project", "custom"] },
+        "targetId": { "type": "string" },
+        "channel": { "type": "string", "enum": ["whatsapp", "email", "in_app"] },
+        "sent": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "datetime", "type", "channel", "sent", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "tasks/{taskId}": {
+      "schema": "Task",
+      "description": "User specific daily tasks"
+    },
+    "projects/{projectId}": {
+      "schema": "Project",
+      "description": "User specific long term projects"
+    },
+    "reminders/{reminderId}": {
+      "schema": "Reminder",
+      "description": "User specific deadline alerts"
+    }
+  }
+}
